@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Pengembalian Buku</title>
+  <link rel="icon" href="ikon.png" type="image/png">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #0e0e10;
+      margin: 0;
+      padding: 20px;
+      color: white;
+    }
+
+    h1 {
+      text-align: center;
+      color: #ff0055;
+      margin-bottom: 30px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #1a1a1d;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 0 10px rgba(255, 0, 85, 0.2);
+    }
+
+    th, td {
+      border: 1px solid #2c2c34;
+      padding: 12px;
+      text-align: center;
+      color: white;
+    }
+
+    th {
+      background: #ff0055;
+      color: white;
+      font-weight: bold;
+      font-size: 14px;
+    }
+
+    td {
+      background: #1f1f23;
+    }
+
+    button {
+      background: #25D366;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background 0.3s ease;
+    }
+
+    button:hover {
+      background: #1ebd5a;
+    }
+  </style>
+</head>
+<body>
+
+<h1>🔄 Pengembalian Buku</h1>
+
+<table>
+  <thead>
+    <tr>
+      <th>Judul Buku</th>
+      <th>Peminjam</th>
+      <th>Tgl Pinjam</th>
+      <th>Batas Kembali</th>
+      <th>Aksi</th>
+    </tr>
+  </thead>
+  <tbody id="daftarPengembalian"></tbody>
+</table>
+
+<script>
+  const supabaseClient = supabase.createClient(
+    "https://lvlufkkwdydpaunqhcjw.supabase.co",
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx2bHVma2t3ZHlkcGF1bnFoY2p3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI1MDc5OTMsImV4cCI6MjA2ODA4Mzk5M30.3QESPNURjPOYRbtgQG-gbgf_1xSvWIP99q-X1Nd0ypo"
+  );
+
+  async function tampilkanBukuDipinjam() {
+    const { data: pinjaman, error } = await supabaseClient
+      .from("peminjaman")
+      .select("*")
+      .eq("status", "Dipinjam")
+      .order("id", { ascending: false });
+
+    if (error || !pinjaman) {
+      alert("Gagal memuat data peminjaman");
+      return;
+    }
+
+    const tbody = document.getElementById("daftarPengembalian");
+    tbody.innerHTML = "";
+
+    for (const row of pinjaman) {
+      const { data: buku } = await supabaseClient
+        .from("buku")
+        .select("judul")
+        .eq("id", row.id_buku)
+        .single();
+
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${buku?.judul || "-"}</td>
+        <td>${row.nama_peminjam}</td>
+        <td>${row.tanggal_pinjam}</td>
+        <td>${row.tanggal_kembali}</td>
+        <td><button onclick="kembalikan('${row.id}')">Kembalikan</button></td>
+      `;
+      tbody.appendChild(tr);
+    }
+  }
+
+  async function kembalikan(id) {
+    const hariIni = new Date().toISOString().split("T")[0];
+    const { error } = await supabaseClient
+      .from("peminjaman")
+      .update({
+        status: "Dikembalikan",
+        tanggal_kembali: hariIni
+      })
+      .eq("id", id);
+
+    if (error) {
+      alert("Gagal mengembalikan buku.");
+    } else {
+      alert("✅ Buku berhasil dikembalikan.");
+      tampilkanBukuDipinjam();
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", tampilkanBukuDipinjam);
+</script>
+
+<script>
+  if (sessionStorage.getItem("login") !== "true") {
+    window.location.href = "login2.html";
+  }
+</script>
+
+</body>
+</html>

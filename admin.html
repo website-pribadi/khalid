@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Akses Admin</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #0e0e10;
+      color: white;
+    }
+    h2 {
+      text-align: center;
+      color: #ff0055;
+    }
+    .tab-button {
+      padding: 10px 20px;
+      margin: 5px;
+      background: #ff0055;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .tab-button:hover {
+      background: #e6004c;
+    }
+    .tab {
+      display: none;
+      margin-top: 20px;
+    }
+    .tab.active {
+      display: block;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #1a1a1d;
+      margin-top: 10px;
+      box-shadow: 0 0 10px rgba(255, 0, 85, 0.1);
+    }
+    th, td {
+      padding: 8px;
+      border: 1px solid #333;
+      text-align: left;
+    }
+    th {
+      background: #2b2b2f;
+      color: #ff0055;
+    }
+    .form-control {
+      margin-bottom: 10px;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 8px;
+      border-radius: 4px;
+      border: 1px solid #444;
+      background-color: #151518;
+      color: white;
+    }
+    button {
+      padding: 10px 16px;
+      border: none;
+      border-radius: 6px;
+      background: #ff0055;
+      color: white;
+      cursor: pointer;
+    }
+    .delete-btn {
+      background: red;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <h2>📋 Akses Admin</h2>
+  <div id="tabButtons">
+    <button class="tab-button" onclick="showTab('quiz')">Soal Kuis</button>
+    <button class="tab-button" id="btnLogs" onclick="showTab('logs')">Riwayat Kuis</button>
+    <button class="tab-button" id="btnMessages" onclick="showTab('messages')">Pesan Chat</button>
+  </div>
+
+  <div id="quiz" class="tab active">
+    <h3>🧠 Soal Kuis</h3>
+    <div class="form-control">
+      <input type="text" id="newQuestion" placeholder="Pertanyaan Baru..." />
+    </div>
+    <div class="form-control">
+      <input type="text" id="newAnswer" placeholder="Jawaban Baru..." />
+    </div>
+    <button onclick="addQuestion()">Tambah Soal</button>
+    <table id="quizTable">
+      <thead>
+        <tr><th>No</th><th>Pertanyaan</th><th>Jawaban</th><th>Aksi</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div id="logs" class="tab">
+    <h3>📜 Riwayat Kuis</h3>
+    <table id="logTable">
+      <thead>
+        <tr><th>No</th><th>Nama</th><th>Pertanyaan</th><th>Jawaban</th><th>Hasil</th><th>Waktu</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div id="messages" class="tab">
+    <h3>💬 Semua Pesan</h3>
+    <table id="chatTable">
+      <thead>
+        <tr><th>No</th><th>Pengirim</th><th>Pesan</th><th>Waktu</th><th>Aksi</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <script>
+    const client = supabase.createClient(
+      'https://hnsvxbohvjjfikmdjfpn.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhuc3Z4Ym9odmpqZmlrbWRqZnBuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI0Nzk0NDMsImV4cCI6MjA2ODA1NTQ0M30.KzOeS0md4A6jeexgXxSdfuXuBbG5L1WtFginkztaPFw'
+    );
+
+    const isAdmin = sessionStorage.getItem("isAdmin");
+    const role = sessionStorage.getItem("adminRole");
+
+    if (isAdmin !== "true") {
+      location.href = "index.html";
+    }
+
+    // 🔒 Batasi UI sesuai role
+    document.addEventListener("DOMContentLoaded", () => {
+      if (role === "limited") {
+        document.getElementById("btnLogs").style.display = "none";
+        document.getElementById("btnMessages").style.display = "none";
+        document.getElementById("logs").style.display = "none";
+        document.getElementById("messages").style.display = "none";
+      }
+
+      loadQuestions();
+      if (role !== "limited") {
+        loadLogs();
+        loadMessages();
+      }
+    });
+
+    function showTab(id) {
+      document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+    }
+
+    async function loadQuestions() {
+      const { data, error } = await client.from('quiz_questions').select('*').order('id', { ascending: true });
+      const tbody = document.querySelector('#quizTable tbody');
+      tbody.innerHTML = '';
+      if (error) return alert('Gagal memuat soal: ' + error.message);
+      data.forEach((q, index) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${index + 1}</td>
+          <td>${q.question}</td>
+          <td>${(Array.isArray(q.answer) ? q.answer : [q.answer]).join(", ")}</td>
+          <td><button class="delete-btn" onclick="deleteQuestion(${q.id})">Hapus</button></td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    async function addQuestion() {
+      const question = document.getElementById('newQuestion').value.trim();
+      const answerText = document.getElementById('newAnswer').value.trim();
+      if (!question || !answerText) return alert('Isi pertanyaan dan jawaban');
+      const answerArray = answerText.split(',').map(a => a.trim()).filter(Boolean);
+      const { error } = await client.from('quiz_questions').insert([{
+        question,
+        answer: answerArray,
+        created_at: new Date().toISOString()
+      }]);
+      if (error) return alert('Gagal menambah soal: ' + error.message);
+      document.getElementById('newQuestion').value = '';
+      document.getElementById('newAnswer').value = '';
+      loadQuestions();
+    }
+
+    async function deleteQuestion(id) {
+      if (!confirm('Yakin hapus soal ini?')) return;
+      await client.from('quiz_questions').delete().eq('id', id);
+      loadQuestions();
+    }
+
+    async function loadLogs() {
+      const { data } = await client.from('quiz_logs').select('*').order('timestamp', { ascending: false });
+      const tbody = document.querySelector('#logTable tbody');
+      tbody.innerHTML = '';
+      data.forEach((log, index) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${index + 1}</td>
+          <td>${log.name}</td>
+          <td>${log.question}</td>
+          <td>${log.answer}</td>
+          <td style="color:${log.result === 'benar' ? 'green' : 'red'}">${log.result}</td>
+          <td>${new Date(log.timestamp).toLocaleString('id-ID')}</td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    async function loadMessages() {
+      const { data } = await client.from('messages').select('*').order('created_at', { ascending: false });
+      const tbody = document.querySelector('#chatTable tbody');
+      tbody.innerHTML = '';
+      data.forEach((msg, index) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${index + 1}</td>
+          <td>${msg.sender}</td>
+          <td>${msg.text}</td>
+          <td>${new Date(msg.created_at).toLocaleString('id-ID')}</td>
+          <td><button class="delete-btn" onclick="deleteMessage(${msg.id})">Hapus</button></td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    async function deleteMessage(id) {
+      if (!confirm('Hapus pesan ini?')) return;
+      await client.from('messages').delete().eq('id', id);
+      loadMessages();
+    }
+  </script>
+</body>
+</html>

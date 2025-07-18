@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Catatan Keuangan</title>
+  <script>
+    if (sessionStorage.getItem("isLoggedIn") !== "true") {
+      window.location.href = "index.html";
+    }
+  </script>
+  <style>
+    body {
+      margin: 0;
+      background-color: #0e0e10;
+      font-family: 'Segoe UI', sans-serif;
+      color: white;
+      padding: 40px 20px;
+    }
+
+    .back-button {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background-color: #ff0055;
+      color: white;
+      padding: 12px 20px;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: bold;
+      transition: background-color 0.3s ease;
+    }
+
+    .back-button:hover {
+      background-color: #e6004c;
+    }
+    h1 {
+      text-align: center;
+      color: #ff0055;
+      margin-bottom: 30px;
+    }
+    form {
+      max-width: 600px;
+      margin: 0 auto 30px;
+      background-color: #1f1f23;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 0 12px rgba(255, 0, 85, 0.2);
+    }
+    input, select {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border: none;
+      border-radius: 8px;
+      background-color: #151518;
+      color: white;
+      font-size: 1rem;
+    }
+    button {
+      background-color: #ff0055;
+      color: white;
+      padding: 10px 16px;
+      border: none;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #e6004c;
+    }
+    table {
+      width: 100%;
+      max-width: 900px;
+      margin: auto;
+      border-collapse: collapse;
+      margin-bottom: 30px;
+    }
+    th, td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid white;
+    }
+    th {
+      background-color: #1a1a1d;
+      color: #ff0055;
+    }
+    .masuk {
+      color: #00cc66;
+    }
+    .keluar {
+      color: #ff3333;
+    }
+    .summary {
+      max-width: 900px;
+      margin: 0 auto;
+      text-align: center;
+    }
+    .summary p {
+      margin: 8px 0;
+      font-size: 1.1rem;
+    }
+  </style>
+</head>
+<body>
+
+  <a href="beranda.html" class="back-button">← Kembali</a>
+
+  <h1>Catatan Keuangan</h1>
+
+  <form id="form-keuangan">
+    <input type="text" id="deskripsi" placeholder="Deskripsi transaksi" required />
+    <input type="number" id="jumlah" placeholder="Jumlah (angka)" required />
+    <select id="jenis" required>
+      <option value="">Pilih Jenis</option>
+      <option value="masuk">Pemasukan</option>
+      <option value="keluar">Pengeluaran</option>
+    </select>
+    <input type="date" id="tanggal" required />
+    <button type="submit">Simpan</button>
+  </form>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Tanggal</th>
+        <th>Deskripsi</th>
+        <th>Jenis</th>
+        <th>Jumlah</th>
+      </tr>
+    </thead>
+    <tbody id="data-keuangan">
+      <tr><td colspan="4">Memuat data...</td></tr>
+    </tbody>
+  </table>
+
+  <div class="summary">
+    <p><strong>Total Pemasukan:</strong> <span id="total-masuk">Rp 0</span></p>
+    <p><strong>Total Pengeluaran:</strong> <span id="total-keluar">Rp 0</span></p>
+    <p><strong>Saldo:</strong> <span id="saldo">Rp 0</span></p>
+  </div>
+
+  <script>
+    const SUPABASE_URL = "https://jopxmcqrvjrchecmhwtp.supabase.co";
+    const SUPABASE_API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpvcHhtY3FydmpyY2hlY21od3RwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI2Njk0NDcsImV4cCI6MjA2ODI0NTQ0N30.UPqgXPxwTz0wA4UUptUQSq0sint25MdbLu9U8bHdmL0";
+
+    const tbody = document.getElementById("data-keuangan");
+    const totalMasukEl = document.getElementById("total-masuk");
+    const totalKeluarEl = document.getElementById("total-keluar");
+    const saldoEl = document.getElementById("saldo");
+
+    async function loadData() {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/catatan_keuangan?select=*&order=tanggal.desc`, {
+        headers: {
+          apikey: SUPABASE_API_KEY,
+          Authorization: `Bearer ${SUPABASE_API_KEY}`
+        }
+      });
+      const data = await res.json();
+
+      if (!data.length) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#888">Belum ada data</td></tr>';
+        return;
+      }
+
+      let totalMasuk = 0;
+      let totalKeluar = 0;
+
+      tbody.innerHTML = data.map(item => {
+        const formatted = `Rp ${item.jumlah.toLocaleString('id-ID')}`;
+        if (item.jenis === 'masuk') totalMasuk += item.jumlah;
+        if (item.jenis === 'keluar') totalKeluar += item.jumlah;
+        return `
+          <tr>
+            <td>${item.tanggal}</td>
+            <td>${item.deskripsi}</td>
+            <td class="${item.jenis}">${item.jenis}</td>
+            <td>${formatted}</td>
+          </tr>`;
+      }).join('');
+
+      totalMasukEl.textContent = `Rp ${totalMasuk.toLocaleString('id-ID')}`;
+      totalKeluarEl.textContent = `Rp ${totalKeluar.toLocaleString('id-ID')}`;
+      const saldo = totalMasuk - totalKeluar;
+      saldoEl.textContent = `Rp ${saldo.toLocaleString('id-ID')}`;
+    }
+
+    document.getElementById("form-keuangan").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const deskripsi = document.getElementById("deskripsi").value.trim();
+      const jumlah = parseInt(document.getElementById("jumlah").value);
+      const jenis = document.getElementById("jenis").value;
+      const tanggal = document.getElementById("tanggal").value;
+      if (!deskripsi || !jumlah || !jenis || !tanggal) return;
+
+      await fetch(`${SUPABASE_URL}/rest/v1/catatan_keuangan`, {
+        method: "POST",
+        headers: {
+          apikey: SUPABASE_API_KEY,
+          Authorization: `Bearer ${SUPABASE_API_KEY}`,
+          "Content-Type": "application/json",
+          Prefer: "return=representation"
+        },
+        body: JSON.stringify({ deskripsi, jumlah, jenis, tanggal })
+      });
+
+      e.target.reset();
+      loadData();
+    });
+
+    loadData();
+  </script>
+</body>
+</html>

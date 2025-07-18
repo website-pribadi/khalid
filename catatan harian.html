@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Catatan Harian</title>
+
+  <!-- Cek Login -->
+  <script>
+    if (sessionStorage.getItem("isLoggedIn") !== "true") {
+      window.location.href = "index.html";
+    }
+  </script>
+
+  <style>
+    body {
+      margin: 0;
+      background-color: #0e0e10;
+      font-family: 'Segoe UI', sans-serif;
+      color: white;
+      padding: 40px 20px;
+    }
+
+    .back-button {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background-color: #ff0055;
+      color: white;
+      padding: 12px 20px;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: bold;
+      transition: background-color 0.3s ease;
+    }
+
+    .back-button:hover {
+      background-color: #e6004c;
+    }
+
+    h1 {
+      text-align: center;
+      color: #ff0055;
+      margin-bottom: 30px;
+    }
+
+    form {
+      max-width: 600px;
+      margin: 0 auto 40px;
+      background-color: #1f1f23;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 0 12px rgba(255, 0, 85, 0.2);
+    }
+
+    textarea, input {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border: none;
+      border-radius: 8px;
+      background-color: #151518;
+      color: white;
+      font-size: 1rem;
+    }
+
+    button {
+      background-color: #ff0055;
+      color: white;
+      padding: 10px 16px;
+      border: none;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #e6004c;
+    }
+
+    .catatan-list {
+      max-width: 700px;
+      margin: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .catatan-card {
+      background-color: #1f1f23;
+      padding: 16px;
+      border-left: 4px solid #ff0055;
+      border-radius: 10px;
+      box-shadow: 0 0 8px rgba(255, 0, 85, 0.2);
+    }
+
+    .catatan-tanggal {
+      font-size: 0.85rem;
+      color: #aaa;
+      margin-bottom: 6px;
+    }
+
+    .catatan-isi {
+      white-space: pre-wrap;
+      color: #eee;
+    }
+  </style>
+</head>
+<body>
+
+  <a href="beranda.html" class="back-button">← Kembali</a>
+
+  <h1>Catatan Harian</h1>
+
+  <form id="form-catatan">
+    <textarea id="isi" placeholder="Tulis catatan harian..." required></textarea>
+    <input type="date" id="tanggal" required />
+    <button type="submit">Simpan</button>
+  </form>
+
+  <div class="catatan-list" id="catatan-list">Memuat catatan...</div>
+
+  <script>
+    const SUPABASE_URL = "https://jopxmcqrvjrchecmhwtp.supabase.co";
+    const SUPABASE_API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpvcHhtY3FydmpyY2hlY21od3RwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI2Njk0NDcsImV4cCI6MjA2ODI0NTQ0N30.UPqgXPxwTz0wA4UUptUQSq0sint25MdbLu9U8bHdmL0";
+
+    const list = document.getElementById("catatan-list");
+    const form = document.getElementById("form-catatan");
+
+    async function loadCatatan() {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/catatan_harian?select=*&order=tanggal.desc`, {
+        headers: {
+          apikey: SUPABASE_API_KEY,
+          Authorization: `Bearer ${SUPABASE_API_KEY}`,
+        }
+      });
+      const data = await res.json();
+      if (!data.length) {
+        list.innerHTML = "<p style='text-align:center;color:#888'>Belum ada catatan harian.</p>";
+        return;
+      }
+
+      list.innerHTML = data.map(item => `
+        <div class="catatan-card">
+          <div class="catatan-tanggal">📅 ${item.tanggal}</div>
+          <div class="catatan-isi">${item.isi}</div>
+        </div>
+      `).join('');
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const isi = document.getElementById("isi").value.trim();
+      const tanggal = document.getElementById("tanggal").value;
+      if (!isi || !tanggal) return;
+
+      await fetch(`${SUPABASE_URL}/rest/v1/catatan_harian`, {
+        method: "POST",
+        headers: {
+          apikey: SUPABASE_API_KEY,
+          Authorization: `Bearer ${SUPABASE_API_KEY}`,
+          "Content-Type": "application/json",
+          Prefer: "return=representation"
+        },
+        body: JSON.stringify({ isi, tanggal })
+      });
+
+      form.reset();
+      loadCatatan();
+    });
+
+    loadCatatan();
+  </script>
+
+</body>
+</html>

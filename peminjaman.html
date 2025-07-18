@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <title>Peminjaman Buku</title>
+  <link rel="icon" href="ikon.png" type="image/png">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <style>
+    :root {
+      --bg-main: #0e0e10;
+      --bg-card: #1a1a1d;
+      --text-color: #ffffff;
+      --accent: #ff0055;
+      --input-bg: #2c2c34;
+      --shadow: rgba(255, 0, 85, 0.2);
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: var(--bg-main);
+      color: var(--text-color);
+      margin: 0;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      color: var(--accent);
+    }
+
+    .form-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    form {
+      background: var(--bg-card);
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 8px 20px var(--shadow);
+      width: 100%;
+      max-width: 400px;
+    }
+
+    form input,
+    form select,
+    form button {
+      display: block;
+      width: 100%;
+      margin-bottom: 16px;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid var(--input-bg);
+      background: var(--input-bg);
+      color: white;
+      font-size: 14px;
+    }
+
+    form input::placeholder {
+      color: #aaa;
+    }
+
+    button {
+      background-color: var(--accent);
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.3s;
+      border: none;
+    }
+
+    button:hover {
+      background-color: #cc0044;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>📖 Form Peminjaman Buku</h1>
+
+  <div class="form-container">
+    <form onsubmit="tambahPeminjaman(); return false;">
+      <select id="idBukuSelect" required>
+        <option value="">-- Pilih Buku --</option>
+      </select>
+      <input type="text" id="namaPeminjam" placeholder="Nama Peminjam" required />
+      <input type="text" id="nomorHp" placeholder="Nomor WhatsApp" required />
+      <input type="date" id="tanggalPinjam" onchange="setTanggalKembali()" required />
+      <input type="hidden" id="tanggalKembali" />
+      <button type="submit">Pinjam Buku</button>
+    </form>
+  </div>
+
+  <script>
+    const supabaseClient = supabase.createClient(
+      "https://lvlufkkwdydpaunqhcjw.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx2bHVma2t3ZHlkcGF1bnFoY2p3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI1MDc5OTMsImV4cCI6MjA2ODA4Mzk5M30.3QESPNURjPOYRbtgQG-gbgf_1xSvWIP99q-X1Nd0ypo"
+    );
+
+    function setTanggalKembali() {
+      const tglPinjam = document.getElementById("tanggalPinjam").value;
+      if (!tglPinjam) return;
+
+      const dateObj = new Date(tglPinjam);
+      dateObj.setMonth(dateObj.getMonth() + 1);
+      const yyyy = dateObj.getFullYear();
+      const mm = String(dateObj.getMonth() + 1).padStart(2, "0");
+      const dd = String(dateObj.getDate()).padStart(2, "0");
+
+      document.getElementById("tanggalKembali").value = `${yyyy}-${mm}-${dd}`;
+    }
+
+    async function loadBukuTersedia() {
+      const { data: semuaBuku } = await supabaseClient.from("buku").select("id, judul");
+      const { data: dipinjam } = await supabaseClient.from("peminjaman").select("id_buku").eq("status", "Dipinjam");
+
+      const idTerpinjam = (dipinjam || []).map(p => p.id_buku);
+      const dropdown = document.getElementById("idBukuSelect");
+      dropdown.innerHTML = '<option value="">-- Pilih Buku --</option>';
+
+      (semuaBuku || []).forEach(buku => {
+        if (!idTerpinjam.includes(buku.id)) {
+          const opt = document.createElement("option");
+          opt.value = buku.id;
+          opt.textContent = buku.judul;
+          dropdown.appendChild(opt);
+        }
+      });
+    }
+
+    async function tambahPeminjaman() {
+      const idBuku = document.getElementById("idBukuSelect").value;
+      const nama = document.getElementById("namaPeminjam").value.trim();
+      const nomorHp = document.getElementById("nomorHp").value.trim();
+      const tgl = document.getElementById("tanggalPinjam").value;
+      const kembali = document.getElementById("tanggalKembali").value;
+
+      if (!idBuku || !nama || !nomorHp || !tgl || !kembali) {
+        alert("Isi semua kolom!");
+        return;
+      }
+
+      const { error } = await supabaseClient.from("peminjaman").insert({
+        id_buku: idBuku,
+        nama_peminjam: nama,
+        nomor_hp: nomorHp,
+        tanggal_pinjam: tgl,
+        tanggal_kembali: kembali,
+        status: "Dipinjam"
+      });
+
+      if (error) {
+        alert("Gagal menyimpan data: " + error.message);
+      } else {
+        alert("✅ Buku berhasil dipinjam.");
+        document.querySelector("form").reset();
+        loadBukuTersedia();
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      loadBukuTersedia();
+    });
+
+    if (sessionStorage.getItem("login") !== "true") {
+      window.location.href = "login2.html";
+    }
+  </script>
+</body>
+</html>

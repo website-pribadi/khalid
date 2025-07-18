@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <title>Riwayat Peminjaman</title>
+  <link rel="icon" href="ikon.png" type="image/png">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #0e0e10;
+      padding: 20px;
+      margin: 0;
+      color: white;
+    }
+
+    h1 {
+      text-align: center;
+      color: #ff0055;
+      margin-bottom: 30px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background: #1a1a1d;
+      box-shadow: 0 0 12px rgba(255, 0, 85, 0.2);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    th, td {
+      border: 1px solid #2c2c34;
+      padding: 12px;
+      text-align: center;
+    }
+
+    th {
+      background: #ff0055;
+      color: white;
+      font-size: 14px;
+    }
+
+    td {
+      background: #1f1f23;
+      color: white;
+    }
+
+    .green { color: #00e676; font-weight: bold; }
+    .orange { color: #ff9100; font-weight: bold; }
+    .red { color: #ff1744; font-weight: bold; }
+
+    a {
+      color: #25D366;
+      font-weight: bold;
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+<h1>📚 Riwayat Peminjaman Buku</h1>
+
+<table>
+  <thead>
+    <tr>
+      <th>Judul Buku</th>
+      <th>Nama Peminjam</th>
+      <th>Tgl Pinjam</th>
+      <th>Tgl Kembali</th>
+      <th>Status</th>
+      <th>Keterangan</th>
+    </tr>
+  </thead>
+  <tbody id="tabelRiwayat"></tbody>
+</table>
+
+<script>
+  const supabaseClient = supabase.createClient(
+    "https://lvlufkkwdydpaunqhcjw.supabase.co",
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx2bHVma2t3ZHlkcGF1bnFoY2p3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI1MDc5OTMsImV4cCI6MjA2ODA4Mzk5M30.3QESPNURjPOYRbtgQG-gbgf_1xSvWIP99q-X1Nd0ypo"
+  );
+
+  async function tampilkanRiwayat() {
+    const { data: pinjam, error } = await supabaseClient
+      .from("peminjaman")
+      .select("*")
+      .order("id", { ascending: false });
+
+    if (error || !pinjam) {
+      alert("Gagal memuat riwayat peminjaman");
+      return;
+    }
+
+    const tbody = document.getElementById("tabelRiwayat");
+    tbody.innerHTML = "";
+
+    const today = new Date().toISOString().split("T")[0];
+
+    for (const row of pinjam) {
+      const { data: buku } = await supabaseClient
+        .from("buku")
+        .select("judul")
+        .eq("id", row.id_buku)
+        .single();
+
+      const judul = buku?.judul || "-";
+
+      let keterangan = "";
+      let kls = "";
+
+      if (row.status === "Dikembalikan") {
+        keterangan = "Sudah dikembalikan";
+        kls = "green";
+      } else if (row.status === "Dipinjam" && row.tanggal_kembali < today) {
+        keterangan = "Lambat";
+        kls = "red";
+      } else {
+        keterangan = "Belum dikembalikan";
+        kls = "orange";
+      }
+
+      let tombolWA = "";
+      if (
+        row.status === "Dipinjam" &&
+        row.tanggal_kembali < today &&
+        row.nomor_hp
+      ) {
+        const nomor = row.nomor_hp.replace(/^0/, "62");
+        const pesan = encodeURIComponent(
+          `Halo ${row.nama_peminjam}, buku "${judul}" yang Anda pinjam sudah lewat tanggal kembali (${row.tanggal_kembali}). Mohon segera dikembalikan.`
+        );
+        tombolWA = `<br><a href="https://wa.me/${nomor}?text=${pesan}" target="_blank">📤 Kirim WA</a>`;
+      }
+
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${judul}</td>
+        <td>${row.nama_peminjam}</td>
+        <td>${row.tanggal_pinjam}</td>
+        <td>${row.tanggal_kembali || "-"}</td>
+        <td>${row.status}</td>
+        <td class="${kls}">${keterangan}${tombolWA}</td>
+      `;
+      tbody.appendChild(tr);
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", tampilkanRiwayat);
+</script>
+
+<script>
+  if (sessionStorage.getItem("login") !== "true") {
+    window.location.href = "login2.html";
+  }
+</script>
+
+</body>
+</html>

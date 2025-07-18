@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard</title>
+  <link rel="icon" href="ikon.png" type="image/png">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg-main: #0e0e10;
+      --bg-card: #1a1a1d;
+      --text-color: #ffffff;
+      --accent: #ff0055;
+      --shadow: rgba(255, 0, 85, 0.2);
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: var(--bg-main);
+      color: var(--text-color);
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      color: var(--accent);
+      margin-bottom: 30px;
+    }
+
+    .dashboard {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      justify-content: center;
+      margin-bottom: 40px;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border-radius: 12px;
+      box-shadow: 0 4px 12px var(--shadow);
+      padding: 20px;
+      width: 260px;
+      text-align: center;
+    }
+
+    .card h3 {
+      margin: 0 0 10px;
+      color: var(--accent);
+    }
+
+    .card p {
+      font-size: 18px;
+      font-weight: bold;
+      margin: 0;
+    }
+
+    canvas {
+      background: var(--bg-card);
+      border-radius: 12px;
+      padding: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>📊 Statistik Perpustakaan</h1>
+  <div class="dashboard">
+    <div class="card">
+      <h3>Total Buku</h3>
+      <p id="totalBuku">...</p>
+    </div>
+    <div class="card">
+      <h3>Buku Dipinjam</h3>
+      <p id="bukuDipinjam">...</p>
+    </div>
+    <div class="card">
+      <h3>Peminjam Aktif</h3>
+      <p id="peminjamAktif">...</p>
+    </div>
+  </div>
+
+  <canvas id="grafikKategori" width="600" height="300"></canvas>
+
+  <script>
+    const supabase = window.supabase.createClient(
+      'https://lvlufkkwdydpaunqhcjw.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx2bHVma2t3ZHlkcGF1bnFoY2p3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI1MDc5OTMsImV4cCI6MjA2ODA4Mzk5M30.3QESPNURjPOYRbtgQG-gbgf_1xSvWIP99q-X1Nd0ypo'
+    );
+
+    async function muatStatistik() {
+      const [bukuRes, pinjamRes] = await Promise.all([
+        supabase.from('buku').select('*'),
+        supabase.from('peminjaman').select('id, nama_peminjam, status')
+      ]);
+
+      const semuaBuku = bukuRes.data || [];
+      const semuaPinjam = pinjamRes.data || [];
+      const aktif = semuaPinjam.filter(p => p.status === 'Dipinjam');
+
+      document.getElementById('totalBuku').textContent = semuaBuku.length;
+      document.getElementById('bukuDipinjam').textContent = aktif.length;
+      document.getElementById('peminjamAktif').textContent = new Set(aktif.map(p => p.nama_peminjam)).size;
+
+      tampilkanGrafikKategori(semuaBuku);
+    }
+
+    function tampilkanGrafikKategori(dataBuku) {
+      const kategoriMap = {};
+      dataBuku.forEach(b => {
+        const kategori = b.kategori || 'Lainnya';
+        kategoriMap[kategori] = (kategoriMap[kategori] || 0) + 1;
+      });
+
+      const ctx = document.getElementById('grafikKategori').getContext('2d');
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: Object.keys(kategoriMap),
+          datasets: [{
+            label: 'Jumlah Buku per Kategori',
+            data: Object.values(kategoriMap),
+            backgroundColor: '#ff0055'
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { display: false },
+            title: {
+              display: true,
+              text: 'Distribusi Buku Berdasarkan Kategori',
+              color: 'white',
+              font: { size: 16 }
+            }
+          },
+          scales: {
+            x: {
+              ticks: { color: 'white' },
+              grid: { color: '#444' }
+            },
+            y: {
+              ticks: { color: 'white' },
+              grid: { color: '#444' }
+            }
+          }
+        }
+      });
+    }
+
+    muatStatistik();
+  </script>
+
+  <script>
+    if (sessionStorage.getItem("login") !== "true") {
+      window.location.href = "login2.html";
+    }
+  </script>
+</body>
+</html>

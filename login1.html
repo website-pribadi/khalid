@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>💖Login💖</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <script>
+    if (sessionStorage.getItem("isLoggedIn") !== "true") {
+      window.location.href = "index.html";
+    }
+  </script>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0e0e10;
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      overflow: hidden;
+    }
+    .box {
+      background: #1a1a1d;
+      padding: 30px;
+      border-radius: 14px;
+      box-shadow: 0 0 20px rgba(255,0,85,0.3);
+      width: 100%;
+      max-width: 400px;
+      display: none;
+      opacity: 0;
+      transform: scale(0.9);
+      transition: all 0.3s ease;
+    }
+    .box.active {
+      display: block;
+      opacity: 1;
+      transform: scale(1);
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #ff0055;
+    }
+    input, button {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 15px;
+      border-radius: 6px;
+      font-size: 16px;
+    }
+    input {
+      border: 1px solid #333;
+      background-color: #151518;
+      color: white;
+    }
+    button {
+      background: #ff0055;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #e6004c;
+    }
+    .error {
+      color: #ff5555;
+      font-size: 14px;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="box" id="nameBox">
+    <h2>Masukkan Namamu 💌</h2>
+    <input type="text" id="inputName" placeholder="Nama kamu..."/>
+    <button id="submitName">Lanjut</button>
+  </div>
+
+  <div class="box" id="quizBox">
+    <h2>💖 Sebelum Masuk...</h2>
+    <p id="quizQuestion" style="text-align:center; font-size:15px;">Loading pertanyaan...</p>
+    <div class="error" id="quizError"></div>
+    <input type="text" id="quizAnswer" placeholder="Jawabanmu di sini..."/>
+    <button id="quizButton">Lanjut</button>
+  </div>
+
+  <div class="box" id="loginBox">
+    <h2>Login</h2>
+    <div class="error" id="errorBox"></div>
+    <input type="text" id="username" placeholder="Username" required/>
+    <input type="password" id="password" placeholder="Password" required/>
+    <button id="authButton">Masuk</button>
+  </div>
+
+<script>
+  const supabase = window.supabase.createClient(
+    "https://hnsvxbohvjjfikmdjfpn.supabase.co",
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhuc3Z4Ym9odmpqZmlrbWRqZnBuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI0Nzk0NDMsImV4cCI6MjA2ODA1NTQ0M30.KzOeS0md4A6jeexgXxSdfuXuBbG5L1WtFginkztaPFw"
+  );
+
+  let quizzes = [];
+  let selectedQuiz, attemptCount = 0, maxAttempts = 3;
+
+  async function loadQuizzes() {
+    const { data, error } = await supabase.from("quiz_questions").select("question, answer");
+    if (error || !data || data.length === 0) {
+      document.getElementById("quizQuestion").textContent = "Gagal memuat soal 😢";
+      return;
+    }
+    quizzes = data.map(row => ({ q: row.question, a: row.answer }));
+    pickQuiz();
+  }
+
+  function showOnly(id) {
+    ["nameBox", "quizBox", "loginBox"].forEach(boxId => {
+      const box = document.getElementById(boxId);
+      box.classList.toggle("active", boxId === id);
+    });
+  }
+
+  function pickQuiz() {
+    selectedQuiz = quizzes[Math.floor(Math.random() * quizzes.length)];
+    document.getElementById("quizQuestion").textContent = selectedQuiz.q;
+    document.getElementById("quizAnswer").value = "";
+    document.getElementById("quizError").textContent = "";
+    attemptCount = 0;
+  }
+
+  async function logQuizAnswer(answer, result) {
+    const name = sessionStorage.getItem("senderName") || "-";
+    try {
+      await supabase.from("quiz_logs").insert([{
+        question: selectedQuiz.q,
+        answer: answer,
+        result: result,
+        timestamp: new Date().toISOString(),
+        name: name
+      }]);
+    } catch (err) {
+      console.error("Log error:", err.message);
+    }
+  }
+
+  async function checkQuiz() {
+    const userAnswer = document.getElementById("quizAnswer").value.trim().toLowerCase();
+    let correct = false;
+    if (Array.isArray(selectedQuiz.a)) {
+      correct = selectedQuiz.a.map(a => a.toLowerCase()).includes(userAnswer);
+    } else {
+      correct = userAnswer === String(selectedQuiz.a).toLowerCase();
+    }
+    await logQuizAnswer(userAnswer, correct ? "benar" : "salah");
+    if (correct) {
+      sessionStorage.setItem("quizPassed", "true");
+      showOnly("loginBox");
+    } else {
+      attemptCount++;
+      const quizError = document.getElementById("quizError");
+      if (attemptCount >= maxAttempts) {
+        quizError.innerHTML = "Maaf jawaban anda salah!.<br>'Mohon di Ingat-ingat Lagi Yaa....!😢'";
+        document.getElementById("quizAnswer").disabled = true;
+      } else {
+        quizError.textContent = `Salah jawaban (${attemptCount}/${maxAttempts})`;
+      }
+    }
+  }
+
+  // ✅ USERNAME DAN PASSWORD
+  const users = {
+    "khalid": "03042025",
+    "nadin": "03042025",
+    "admin": "admin",
+    "admin1": "admin1"
+  };
+
+  document.addEventListener("DOMContentLoaded", async () => {
+    const loggedIn = sessionStorage.getItem("loggedIn");
+    const senderName = sessionStorage.getItem("senderName");
+    const quizPassed = sessionStorage.getItem("quizPassed");
+
+    if (loggedIn) {
+      const isAdmin = sessionStorage.getItem("isAdmin");
+      const role = sessionStorage.getItem("adminRole");
+      if (isAdmin === "true") {
+        window.location.href = "admin.html";
+      } else {
+        window.location.href = "chat.html";
+      }
+    } else if (!senderName) {
+      showOnly("nameBox");
+    } else if (!quizPassed) {
+      showOnly("quizBox");
+      await loadQuizzes();
+    } else {
+      showOnly("loginBox");
+    }
+
+    document.getElementById("submitName").addEventListener("click", async () => {
+      const name = document.getElementById("inputName").value.trim();
+      if (name) {
+        sessionStorage.setItem("senderName", name);
+        showOnly("quizBox");
+        await loadQuizzes();
+      }
+    });
+
+    document.getElementById("quizButton").addEventListener("click", checkQuiz);
+
+    document.getElementById("authButton").addEventListener("click", () => {
+      const senderName = sessionStorage.getItem("senderName");
+      const quizPassed = sessionStorage.getItem("quizPassed");
+      if (!senderName || !quizPassed) {
+        alert("Harus isi nama & lulus kuis dulu!");
+        return;
+      }
+      const user = document.getElementById("username").value.trim();
+      const pass = document.getElementById("password").value;
+      const errorBox = document.getElementById("errorBox");
+      errorBox.textContent = "";
+
+      if (!user || !pass) {
+        errorBox.textContent = "Username dan password wajib.";
+        return;
+      }
+      if (!users[user] || users[user] !== pass) {
+        errorBox.textContent = "Username atau password salah.";
+        return;
+      }
+
+      // ✅ ATUR ROLE ADMIN
+      if (user === "admin") {
+        sessionStorage.setItem("isAdmin", "true");
+        sessionStorage.setItem("adminRole", "full");
+}       else if (user === "admin1") {
+        sessionStorage.setItem("isAdmin", "true");
+        sessionStorage.setItem("adminRole", "limited");
+}       else {
+        sessionStorage.setItem("isAdmin", "false");
+}
+
+      sessionStorage.setItem("loggedIn", "true");
+      window.location.href = sessionStorage.getItem("isAdmin") === "true"
+        ? "admin.html"
+        : "chat.html";
+    });
+  });
+
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Enter") {
+      if (document.getElementById("nameBox").classList.contains("active")) {
+        document.getElementById("submitName").click();
+      } else if (document.getElementById("quizBox").classList.contains("active")) {
+        document.getElementById("quizButton").click();
+      } else if (document.getElementById("loginBox").classList.contains("active")) {
+        document.getElementById("authButton").click();
+      }
+    }
+  });
+</script>
+</body>
+</html>

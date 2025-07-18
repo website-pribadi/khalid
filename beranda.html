@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Beranda</title>
+  <script>
+    if (sessionStorage.getItem("isLoggedIn") !== "true") {
+      window.location.href = "index.html";
+    }
+  </script>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #0e0e10;
+      color: white;
+    }
+    .topbar {
+      display: flex;
+      justify-content: flex-end;
+      align-items: flex-start;
+      padding: 20px;
+      background-color: #1a1a1d;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    }
+    .avatar {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 3px solid #ff0055;
+      box-shadow: 0 0 12px rgba(255, 0, 85, 0.7);
+    }
+    .dropdown {
+      position: absolute;
+      top: 110px;
+      right: 20px;
+      background-color: #1f1f23;
+      border-radius: 12px;
+      box-shadow: 0 0 14px rgba(255, 0, 85, 0.25);
+      overflow: hidden;
+      display: none;
+      flex-direction: column;
+      width: 240px;
+      z-index: 100;
+    }
+    .dropdown.active {
+      display: flex;
+    }
+    .nav-link {
+      padding: 14px 20px;
+      text-decoration: none;
+      color: #f1f1f1;
+      font-weight: bold;
+      border-bottom: 1px solid #2c2c34;
+    }
+    .nav-link:hover {
+      background-color: #2b2b31;
+      color: #ff0055;
+    }
+    .main-content {
+      padding: 40px;
+    }
+    .section {
+      background: #1a1a1d;
+      padding: 16px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      box-shadow: 0 0 8px rgba(255, 0, 85, 0.2);
+      max-width: 600px;
+    }
+    .section h2 {
+      margin-top: 0;
+      color: #ff0055;
+      font-size: 1.2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .item, .message-item {
+      font-size: 0.95rem;
+      margin-bottom: 6px;
+      border-bottom: 1px solid #333;
+      padding-bottom: 4px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .btn-selesai {
+      background-color: #ff0055;
+      color: white;
+      border: none;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+      margin-left: 10px;
+    }
+    .btn-selesai:hover {
+      background-color: #e6004c;
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <img src="profil1.png" alt="Foto Profil" class="avatar" id="toggleMenu">
+    <div class="dropdown" id="sidebarMenu">
+      <a href="profil.html" class="nav-link">Profil</a>
+      <a href="catatan tugas.html" class="nav-link">Catatan Tugas</a>
+      <a href="catatan harian.html" class="nav-link">Catatan Harian</a>
+      <a href="catatan keuangan.html" class="nav-link">Catatan Keuangan</a>
+      <a href="catatan hutang & ngutang.html" class="nav-link">Catatan Hutang & Ngutang</a>
+      <a href="catatan motivasi.html" class="nav-link">Catatan Motivasi</a>
+      <a href="login1.html" class="nav-link">Chat</a>
+      <a href="index1.html" class="nav-link">Perpustakaan</a>
+    </div>
+  </div>
+
+  <div class="main-content">
+    <div class="section">
+      <h2>Tugas Hari Ini</h2>
+      <div id="tugas-hari-ini-list">Memuat...</div>
+    </div>
+
+    <div class="section">
+      <h2>Motivasi Hari Ini</h2>
+      <div id="motivasi-hari-ini-list">Memuat...</div>
+    </div>
+
+    <div class="section">
+      <h2>Pesan Terbaru</h2>
+      <div id="pesan-terbaru">Memuat...</div>
+    </div>
+  </div>
+
+  <script>
+    // Sidebar toggle
+    document.getElementById("toggleMenu").addEventListener("click", function () {
+      const menu = document.getElementById("sidebarMenu");
+      menu.classList.toggle("active");
+    });
+
+    function getNamaHari(tanggalStr) {
+      const hari = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+      const date = new Date(tanggalStr);
+      return hari[date.getDay()];
+    }
+
+    async function loadTugasHariIni() {
+      const today = new Date().toISOString().split('T')[0];
+      const list = document.getElementById("tugas-hari-ini-list");
+      const res = await fetch("https://jopxmcqrvjrchecmhwtp.supabase.co/rest/v1/tugas?select=no,tugas,tanggal&tanggal=eq." + today, {
+        headers: {
+          apikey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpvcHhtY3FydmpyY2hlY21od3RwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI2Njk0NDcsImV4cCI6MjA2ODI0NTQ0N30.UPqgXPxwTz0wA4UUptUQSq0sint25MdbLu9U8bHdmL0",
+          Authorization: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpvcHhtY3FydmpyY2hlY21od3RwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI2Njk0NDcsImV4cCI6MjA2ODI0NTQ0N30.UPqgXPxwTz0wA4UUptUQSq0sint25MdbLu9U8bHdmL0"
+        }
+      });
+      const data = await res.json();
+      list.innerHTML = data.length
+        ? data.map(task => `
+            <div class='item'>
+              <span>${task.tugas} <small>(${getNamaHari(task.tanggal)}, ${task.tanggal})</small></span>
+              <button class="btn-selesai" onclick="hapusTugas(${task.no})">Selesai</button>
+            </div>
+          `).join('')
+        : "<p>Tidak ada tugas untuk hari ini.</p>";
+    }
+
+    async function hapusTugas(no) {
+      await fetch(`https://jopxmcqrvjrchecmhwtp.supabase.co/rest/v1/tugas?no=eq.${no}`, {
+        method: "DELETE",
+        headers: {
+          apikey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpvcHhtY3FydmpyY2hlY21od3RwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI2Njk0NDcsImV4cCI6MjA2ODI0NTQ0N30.UPqgXPxwTz0wA4UUptUQSq0sint25MdbLu9U8bHdmL0",
+          Authorization: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpvcHhtY3FydmpyY2hlY21od3RwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI2Njk0NDcsImV4cCI6MjA2ODI0NTQ0N30.UPqgXPxwTz0wA4UUptUQSq0sint25MdbLu9U8bHdmL0"
+        }
+      });
+      loadTugasHariIni();
+    }
+
+    async function loadMotivasiHariIni() {
+      const list = document.getElementById("motivasi-hari-ini-list");
+      const res = await fetch("https://jopxmcqrvjrchecmhwtp.supabase.co/rest/v1/catatan_motivasi?select=isi", {
+        headers: {
+          apikey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpvcHhtY3FydmpyY2hlY21od3RwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI2Njk0NDcsImV4cCI6MjA2ODI0NTQ0N30.UPqgXPxwTz0wA4UUptUQSq0sint25MdbLu9U8bHdmL0",
+          Authorization: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpvcHhtY3FydmpyY2hlY21od3RwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI2Njk0NDcsImV4cCI6MjA2ODI0NTQ0N30.UPqgXPxwTz0wA4UUptUQSq0sint25MdbLu9U8bHdmL0"
+        }
+      });
+      const data = await res.json();
+      if (data.length === 0) {
+        list.innerHTML = "<p>Tidak ada motivasi tersedia.</p>";
+        return;
+      }
+      const random = data[Math.floor(Math.random() * data.length)];
+      list.innerHTML = `<div class='item'>“${random.isi}”</div>`;
+    }
+
+    async function loadPesanTerbaru() {
+      const res = await fetch("https://hnsvxbohvjjfikmdjfpn.supabase.co/rest/v1/messages?select=sender,text,created_at&order=created_at.desc&limit=1", {
+        headers: {
+          apikey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhuc3Z4Ym9odmpqZmlrbWRqZnBuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI0Nzk0NDMsImV4cCI6MjA2ODA1NTQ0M30.KzOeS0md4A6jeexgXxSdfuXuBbG5L1WtFginkztaPFw",
+          Authorization: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhuc3Z4Ym9odmpqZmlrbWRqZnBuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI0Nzk0NDMsImV4cCI6MjA2ODA1NTQ0M30.KzOeS0md4A6jeexgXxSdfuXuBbG5L1WtFginkztaPFw"
+        }
+      });
+      const data = await res.json();
+      const box = document.getElementById("pesan-terbaru");
+      if (data.length) {
+        const msg = data[0];
+        box.innerHTML = `
+          <div class='message-item'>
+            <span><strong>${msg.sender}:</strong> ${msg.text}</span>
+            <a href="chat.html" class="btn-selesai">Balas Pesan</a>
+          </div>
+        `;
+      } else {
+        box.innerHTML = "Belum ada pesan.";
+      }
+    }
+
+    // Load semua data saat halaman dibuka
+    loadTugasHariIni();
+    loadMotivasiHariIni();
+    loadPesanTerbaru();
+  </script>
+</body>
+</html>

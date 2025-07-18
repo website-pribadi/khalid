@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Catatan Tugas</title>
+
+  <!-- Cek Login -->
+  <script>
+    if (sessionStorage.getItem("isLoggedIn") !== "true") {
+      window.location.href = "index.html";
+    }
+  </script>
+
+
+  <style>
+    body {
+      margin: 0;
+      background-color: #0e0e10;
+      font-family: 'Segoe UI', sans-serif;
+      color: white;
+      padding: 40px 20px;
+    }
+
+    .back-button {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background-color: #ff0055;
+      color: white;
+      padding: 12px 20px;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: bold;
+      transition: background-color 0.3s ease;
+    }
+
+    .back-button:hover {
+      background-color: #e6004c;
+    }
+
+    h1 {
+      text-align: center;
+      color: #ff0055;
+      margin-bottom: 30px;
+    }
+
+    form {
+      max-width: 600px;
+      margin: 0 auto 40px;
+      background-color: #1f1f23;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 0 12px rgba(255, 0, 85, 0.2);
+    }
+
+    input, textarea {
+      width: 100%;
+      padding: 12px;
+      margin: 8px 0 16px;
+      border: none;
+      border-radius: 8px;
+      background-color: #151518;
+      color: white;
+      font-size: 1rem;
+    }
+
+    input[type="date"] {
+      color-scheme: dark;
+    }
+
+    button {
+      background-color: #ff0055;
+      color: white;
+      padding: 12px 20px;
+      border: none;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #e6004c;
+    }
+
+    .task-list {
+      max-width: 800px;
+      margin: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .task-card {
+      background-color: #1f1f23;
+      padding: 20px;
+      border-left: 5px solid #ff0055;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(255, 0, 85, 0.2);
+    }
+
+    .task-title {
+      font-size: 1.2rem;
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+
+    .task-date {
+      font-size: 0.9rem;
+      color: #bbb;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Tombol Kembali -->
+  <a href="beranda.html" class="back-button">← Kembali</a>
+
+  <h1>Catatan Tugas</h1>
+
+  <!-- Form Tambah Tugas -->
+  <form id="task-form">
+    <input type="text" id="tugas" placeholder="Judul / Isi Tugas" required />
+    <input type="date" id="tanggal" required />
+    <button type="submit">Tambah Tugas</button>
+  </form>
+
+  <!-- Daftar Tugas -->
+  <div class="task-list" id="task-list"></div>
+
+  <!-- Supabase Logic -->
+  <script>
+    const SUPABASE_URL = "https://jopxmcqrvjrchecmhwtp.supabase.co";
+    const SUPABASE_API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpvcHhtY3FydmpyY2hlY21od3RwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI2Njk0NDcsImV4cCI6MjA2ODI0NTQ0N30.UPqgXPxwTz0wA4UUptUQSq0sint25MdbLu9U8bHdmL0";
+
+    const taskForm = document.getElementById("task-form");
+    const taskList = document.getElementById("task-list");
+
+    function getNamaHari(tanggalStr) {
+      const hari = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+      const date = new Date(tanggalStr);
+      return hari[date.getDay()];
+    }
+
+    async function loadTasks() {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/tugas?select=*`, {
+        headers: {
+          apikey: SUPABASE_API_KEY,
+          Authorization: `Bearer ${SUPABASE_API_KEY}`,
+        }
+      });
+
+      const data = await res.json();
+      taskList.innerHTML = "";
+
+      data.sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal));
+
+      data.forEach(task => {
+        const card = document.createElement("div");
+        card.className = "task-card";
+        card.innerHTML = `
+          <div class="task-title">${task.tugas}</div>
+          <div class="task-date">Tanggal: ${task.tanggal} (${getNamaHari(task.tanggal)})</div>
+        `;
+        taskList.appendChild(card);
+      });
+    }
+
+    taskForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const tugas = document.getElementById("tugas").value.trim();
+      const tanggal = document.getElementById("tanggal").value;
+
+      if (!tugas || !tanggal) return;
+
+      await fetch(`${SUPABASE_URL}/rest/v1/tugas`, {
+        method: "POST",
+        headers: {
+          apikey: SUPABASE_API_KEY,
+          Authorization: `Bearer ${SUPABASE_API_KEY}`,
+          "Content-Type": "application/json",
+          Prefer: "return=representation"
+        },
+        body: JSON.stringify({ tugas, tanggal })
+      });
+
+      taskForm.reset();
+      loadTasks();
+    });
+
+    loadTasks();
+  </script>
+
+</body>
+</html>

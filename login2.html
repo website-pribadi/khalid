@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Login Admin</title>
+  <link rel="icon" href="ikon.png" type="image/png">
+  <style>
+    :root {
+      --background-main: #0e0e10;
+      --background-section: #1a1a1d;
+      --text-color: #ffffff;
+      --accent-color: #ff0055;
+      --border-color: #2c2c34;
+      --shadow-color: rgba(255, 0, 85, 0.2);
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: var(--background-main);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      color: var(--text-color);
+    }
+
+    .card {
+      background: var(--background-section);
+      padding: 30px;
+      border-radius: 16px;
+      text-align: center;
+      box-shadow: 0 8px 20px var(--shadow-color);
+      width: 300px;
+    }
+
+    .input-group {
+      display: flex;
+      align-items: center;
+      background: #2c2c34;
+      border-radius: 50px;
+      margin: 12px 0;
+      padding: 8px 12px;
+    }
+
+    .input-group span {
+      color: white;
+      margin-right: 8px;
+    }
+
+    .input-group input {
+      background: transparent;
+      border: none;
+      outline: none;
+      flex: 1;
+      padding: 8px;
+      border-radius: 50px;
+      font-size: 14px;
+      color: white;
+    }
+
+    button {
+      background: var(--accent-color);
+      color: white;
+      font-weight: bold;
+      border: none;
+      padding: 12px;
+      width: 100%;
+      border-radius: 50px;
+      cursor: pointer;
+      margin-top: 12px;
+      letter-spacing: 1px;
+      transition: background 0.3s;
+      position: relative;
+    }
+
+    button:hover {
+      background: #cc0044;
+    }
+
+    .back-home {
+      display: block;
+      padding: 10px;
+      background: #2c2c34;
+      color: #fff;
+      text-decoration: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: bold;
+      letter-spacing: 1px;
+      margin-top: 16px;
+      transition: background 0.3s;
+    }
+
+    .back-home:hover {
+      background: #444;
+    }
+
+    h3 {
+      letter-spacing: 1px;
+      color: var(--accent-color);
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h3>🔐 LOGIN ADMIN</h3>
+    <div class="input-group">
+      <span>👤</span>
+      <input type="text" id="username" placeholder="Username">
+    </div>
+    <div class="input-group">
+      <span>🔒</span>
+      <input type="password" id="password" placeholder="Password">
+    </div>
+    <button onclick="login(this)">MASUK</button>
+    <a href="index.html" class="back-home">🔙 BACK TO HOME</a>
+  </div>
+
+  <script>
+  function login(button) {
+    const user = document.getElementById("username").value.trim();
+    const pass = document.getElementById("password").value.trim();
+    const card = document.querySelector(".card");
+
+    if (!user || !pass) {
+      alert("Isi semua kolom!");
+      return;
+    }
+
+    button.disabled = true;
+    button.textContent = "⏳ Loading...";
+
+    setTimeout(() => {
+      if (user === "perpustakaan" && pass === "pribadi") {
+        sessionStorage.setItem("login", "true");
+        alert("Login berhasil, selamat datang admin!");
+        window.location.href = "admin-koleksi.html";
+      } else {
+        button.disabled = false;
+        button.textContent = "MASUK";
+        alert("Username atau Password salah!");
+      }
+    }, 1000);
+  }
+
+  document.addEventListener("keypress", function (e) {
+    if (e.key === "Enter") login(document.querySelector("button"));
+  });
+  </script>
+</body>
+</html>

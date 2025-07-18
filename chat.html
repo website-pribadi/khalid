@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Chat private</title>
+  <script>
+    if (sessionStorage.getItem("loggedIn") !== "true") {
+      location.href = "login1.html";
+    }
+    if (!sessionStorage.getItem("senderName")) {
+      location.href = "login1.html";
+    }
+    function logout() {
+      sessionStorage.clear();
+      location.href = "login1.html";
+    }
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: 'Segoe UI', Roboto, sans-serif;
+      background: #0e0e10;
+      color: white;
+    }
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .back-button {
+      position: fixed;
+      top: 3px;
+      right: 20px;
+      background-color: black;
+      color: white;
+      padding: 12px 20px;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: bold;
+      z-index: 9999;
+      transition: background-color 0.3s ease;
+    }
+    .back-button:hover {
+      background-color: #222;
+    }
+    .chat-box {
+      width: 100vw;
+      height: 100vh;
+      background: #1a1a1d;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    .header {
+      background: #ff0055;
+      color: white;
+      padding: 14px;
+      font-size: 18px;
+      font-weight: bold;
+      text-align: center;
+      position: relative;
+    }
+    .logout-button {
+      position: absolute;
+      top: 12px;
+      right: 16px;
+      background: #b91c1c;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .logout-button:hover {
+      background: #dc2626;
+    }
+    .messages {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+      background: #1a1a1d;
+      display: flex;
+      flex-direction: column;
+    }
+    .message {
+      position: relative;
+      margin: 6px 0;
+      padding: 10px 14px;
+      border-radius: 7.5px;
+      max-width: 70%;
+      word-wrap: break-word;
+      font-size: 14px;
+      white-space: pre-wrap;
+      box-shadow: 0 1px 1px rgba(0,0,0,0.1);
+    }
+    .me {
+      align-self: flex-end;
+      background: #ff0055;
+      color: white;
+      border-top-right-radius: 0;
+    }
+    .friend {
+      align-self: flex-start;
+      background: #2b2b2f;
+      color: white;
+      border-top-left-radius: 0;
+    }
+    .message small {
+      display: flex;
+      font-size: 11px;
+      color: #ccc;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 4px;
+      margin-top: 4px;
+    }
+    .typing-status {
+      font-size: 12px;
+      padding: 5px 10px;
+      color: #ccc;
+      min-height: 16px;
+    }
+    .input-box {
+      display: flex;
+      align-items: center;
+      padding: 10px;
+      background: #1a1a1d;
+      border-top: 1px solid #333;
+    }
+    .input-box input[type="text"] {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      font-size: 15px;
+      border-radius: 20px;
+      outline: none;
+      background: #151518;
+      color: white;
+    }
+    .input-box label {
+      margin-left: 10px;
+      font-size: 20px;
+      cursor: pointer;
+    }
+    .input-box button {
+      margin-left: 10px;
+      padding: 10px 20px;
+      background: #ff0055;
+      color: white;
+      border: none;
+      border-radius: 20px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .input-box button:hover {
+      background: #e6004c;
+    }
+    .context-menu {
+      position: absolute;
+      background: #2a2a2e;
+      border: 1px solid #444;
+      border-radius: 6px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      display: none;
+      flex-direction: column;
+      z-index: 1000;
+    }
+    .context-menu button {
+      padding: 10px 14px;
+      font-size: 14px;
+      background: none;
+      border: none;
+      text-align: left;
+      color: white;
+      cursor: pointer;
+    }
+    .context-menu button:hover {
+      background: #333;
+    }
+    #replyBox {
+      background:#2b2b2f;
+      border-left:4px solid #ff0055;
+      color: white;
+    }
+    #replyBox button {
+      color: #ff0055;
+    }
+  </style>
+</head>
+<body>
+
+  <a href="beranda.html" class="back-button">← Kembali</a>
+
+  <div class="chat-box">
+    <button class="logout-button" onclick="logout()">Logout</button>
+    <div class="header">Chat Private</div>
+    <div id="messages" class="messages"></div>
+    <div id="typingStatus" class="typing-status"></div>
+    <div id="replyBox" style="display:none; padding:10px; background:#e0f7fa; border-left:4px solid #00796b;">
+      Membalas: <span id="replyText" style="font-weight:bold;"></span>
+      <button onclick="cancelReply()" style="float:right; background:none; border:none; color:#00796b; cursor:pointer;">✕</button>
+    </div>
+    <div class="input-box">
+      <input type="text" id="messageInput" placeholder="Ketik pesan..." autocomplete="off" />
+      <label for="fileInput">📷</label>
+      <input type="file" id="fileInput" accept="image/*" style="display:none;" />
+      <button onclick="sendMessage()">➤</button>
+    </div>
+  </div>
+
+  <div id="contextMenu" class="context-menu">
+    <button onclick="handleReply()">✉️ Balas</button>
+    <button onclick="handleEdit()">✏️ Edit</button>
+    <button onclick="handleDelete()">🗑️ Hapus</button>
+  </div>
+
+  <audio id="notifSound" src="https://notificationsounds.com/storage/sounds/file-sounds-1157-pristine.mp3"></audio>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <script>
+    // Semua script Supabase kamu sudah tergabung penuh di sini 👇
+    const SUPABASE_URL = 'https://hnsvxbohvjjfikmdjfpn.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhuc3Z4Ym9odmpqZmlrbWRqZnBuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI0Nzk0NDMsImV4cCI6MjA2ODA1NTQ0M30.KzOeS0md4A6jeexgXxSdfuXuBbG5L1WtFginkztaPFw';
+    const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const messagesDiv = document.getElementById('messages');
+    const notifSound = document.getElementById('notifSound');
+    const typingStatus = document.getElementById('typingStatus');
+    const input = document.getElementById('messageInput');
+
+    let senderName = sessionStorage.getItem("senderName");
+    if (!senderName) {
+       alert("Nama tidak ditemukan, silakan login ulang.");
+       location.href = "index.html";
+     }
+    let selectedMessageId = null;
+    let selectedMessageText = null;
+    let replyToText = null;
+    let isLoading = true;
+
+    document.getElementById('fileInput').addEventListener('change', function () {
+      const file = this.files[0];
+      if (file) {
+        console.log("📷 File dipilih:", file.name);
+      }
+    });
+
+    async function uploadImage(file) {
+      const filePath = `${Date.now()}-${file.name}`;
+      const { data, error } = await client.storage.from('chat-files').upload(filePath, file);
+      if (error) {
+        alert('Gagal upload gambar');
+        console.error("❌ Upload error:", error);
+        return null;
+      }
+      const { data: publicUrlData } = client.storage.from('chat-files').getPublicUrl(filePath);
+      console.log("🌐 Public URL:", publicUrlData?.publicUrl);
+      return publicUrlData.publicUrl;
+    }
+
+    async function sendMessage() {
+      const text = input.value.trim();
+      const file = document.getElementById('fileInput').files[0];
+      let imageUrl = null;
+
+      if (!text && !file) {
+        alert("Isi pesan atau pilih gambar terlebih dahulu.");
+        return;
+      }
+
+      if (file) {
+        imageUrl = await uploadImage(file);
+        document.getElementById('fileInput').value = '';
+      }
+
+      const messageData = {
+        text,
+        sender: senderName,
+        status: 'sent',
+        created_at: new Date().toISOString(),
+        image_url: imageUrl
+      };
+      if (replyToText) messageData.reply_to = replyToText;
+
+      const { data, error } = await client.from('messages').insert([messageData]).select();
+      if (data) addMessageToUI(data[0]);
+      input.value = '';
+      cancelReply();
+    }
+
+    function addMessageToUI(message) {
+      if (document.getElementById(`msg-${message.id}`)) return;
+      const div = document.createElement('div');
+      div.className = 'message ' + (message.sender === senderName ? 'me' : 'friend');
+      div.id = `msg-${message.id}`;
+      const time = new Date(message.created_at).toLocaleString('id-ID', {
+        hour: '2-digit',
+        minute: '2-digit',
+        day: '2-digit',
+        month: 'short',
+        timeZone: 'Asia/Jakarta'
+      });
+      let replyHTML = message.reply_to ? `<div style="background:#f0f0f0;padding:6px;border-left:3px solid #ccc;font-size:13px;margin-bottom:4px;">${message.reply_to}</div>` : '';
+      let imageHTML = message.image_url ? `<img src="${message.image_url}" style="max-width:100%; margin-top:6px; border-radius:8px;">` : '';
+      div.innerHTML = `<strong style="font-size:12px">${message.sender}</strong><br>${replyHTML}${message.text || ''}${imageHTML}<br><small>${time}</small>`;
+      div.addEventListener('contextmenu', e => {
+        e.preventDefault();
+        selectedMessageId = message.id;
+        selectedMessageText = message.text;
+        if (message.sender === senderName) {
+          showContextMenu(e.pageX, e.pageY);
+        } else {
+          handleReply();
+        }
+      });
+      messagesDiv.appendChild(div);
+      requestAnimationFrame(() => scrollToBottom());
+    }
+
+    function scrollToBottom() {
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+
+    function showContextMenu(x, y) {
+      const menu = document.getElementById('contextMenu');
+      menu.style.left = `${x}px`;
+      menu.style.top = `${y}px`;
+      menu.style.display = 'flex';
+    }
+
+    function hideContextMenu() {
+      document.getElementById('contextMenu').style.display = 'none';
+    }
+
+    document.addEventListener('click', hideContextMenu);
+
+    function handleReply() {
+      document.getElementById('replyText').textContent = selectedMessageText;
+      document.getElementById('replyBox').style.display = 'block';
+      replyToText = selectedMessageText;
+      hideContextMenu();
+    }
+
+    function cancelReply() {
+      document.getElementById('replyBox').style.display = 'none';
+      replyToText = null;
+    }
+
+    async function handleEdit() {
+      const newText = prompt("Edit pesan:", selectedMessageText);
+      if (!newText) return;
+      await client.from('messages').update({ text: newText }).eq('id', selectedMessageId);
+      hideContextMenu();
+      await loadMessages();
+    }
+
+    async function handleDelete() {
+      if (confirm("Hapus pesan?")) {
+        await client.from('messages').delete().eq('id', selectedMessageId);
+        const el = document.getElementById(`msg-${selectedMessageId}`);
+        if (el) el.remove();
+      }
+      hideContextMenu();
+    }
+
+    async function loadMessages() {
+      isLoading = true;
+      messagesDiv.innerHTML = '';
+      const { data } = await client.from('messages').select('*').order('created_at', { ascending: false });
+      data.reverse().forEach(msg => addMessageToUI(msg));
+      isLoading = false;
+      requestAnimationFrame(() => scrollToBottom());
+    }
+
+    const channel = client.channel('public:messages');
+    channel
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
+        if (!isLoading && payload.new.sender !== senderName && !document.getElementById(`msg-${payload.new.id}`)) {
+          addMessageToUI(payload.new);
+          notifSound.play();
+        }
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'messages' }, payload => {
+        const el = document.getElementById(`msg-${payload.old.id}`);
+        if (el) el.remove();
+      })
+      .subscribe();
+
+    loadMessages();
+
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+  </script>
+</body>
+</html>
+
