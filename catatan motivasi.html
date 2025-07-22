@@ -34,6 +34,11 @@
       transition: background-color 0.3s ease;
     }
 
+    .motivasi-list {
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
     .back-button:hover {
       background-color: #e6004c;
     }
@@ -115,7 +120,7 @@
   <form id="motivasi-form">
     <textarea id="isi" placeholder="Tulis motivasi atau afirmasi..." required></textarea>
     <input type="date" id="tanggal" required />
-    <button type="submit">Simpan</button>
+    <button type="submit">Tambah</button>
   </form>
 
   <div class="motivasi-list" id="motivasi-list">Memuat catatan motivasi...</div>

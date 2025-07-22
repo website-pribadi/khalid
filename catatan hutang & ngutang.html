@@ -93,7 +93,7 @@
         <input type="number" id="jumlahHutang" placeholder="Jumlah">
         <input type="date" id="tanggalHutang">
       </div>
-      <button type="submit">Tambah Hutang</button>
+      <button type="submit">Tambah</button>
       <div id="msgHutang" class="msg"></div>
     </form>
   </div>
@@ -106,7 +106,7 @@
         <input type="number" id="jumlahNgutang" placeholder="Jumlah">
         <input type="date" id="tanggalNgutang">
       </div>
-      <button type="submit">Tambah Ngutang</button>
+      <button type="submit">Tambah</button>
       <div id="msgNgutang" class="msg"></div>
     </form>
   </div>
@@ -223,7 +223,7 @@ async function loadData() {
       <td>${d.nama}</td>
       <td>Rp ${d.jumlah.toLocaleString('id-ID')}</td>
       <td>${d.tanggal}</td>
-      <td>${d.status === 'Belum Lunas' ? `<button onclick="tandaiLunas(${d.id}, 'hutang')">Tandai Lunas</button>` : 'Lunas'}</td>
+      <td>${d.status === 'Belum Lunas' ? `<button onclick="tandaiLunas(${d.id}, 'hutang')">Lunas</button>` : 'Lunas'}</td>
     </tr>`).join("");
 
   document.querySelector("#tabelNgutang tbody").innerHTML = urutkan(dataNgutang).map(d => `
@@ -231,7 +231,7 @@ async function loadData() {
       <td>${d.nama}</td>
       <td>Rp ${d.jumlah.toLocaleString('id-ID')}</td>
       <td>${d.tanggal}</td>
-      <td>${d.status === 'Belum Lunas' ? `<button onclick="tandaiLunas(${d.id}, 'ngutang')">Tandai Lunas</button>` : 'Lunas'}</td>
+      <td>${d.status === 'Belum Lunas' ? `<button onclick="tandaiLunas(${d.id}, 'ngutang')">Lunas</button>` : 'Lunas'}</td>
     </tr>`).join("");
 
   const totalHutang = dataHutang

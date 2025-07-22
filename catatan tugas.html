@@ -23,6 +23,12 @@
       padding: 40px 20px;
     }
 
+    .task-list {
+      max-height: 300px; /* Atur sesuai kebutuhan */
+      overflow-y: auto;
+      padding-right: 10px; /* opsional, agar tidak menabrak scrollbar */
+    }
+
     .back-button {
       position: absolute;
       top: 20px;
@@ -123,7 +129,7 @@
   <form id="task-form">
     <input type="text" id="tugas" placeholder="Judul / Isi Tugas" required />
     <input type="date" id="tanggal" required />
-    <button type="submit">Tambah Tugas</button>
+    <button type="submit">Tambah</button>
   </form>
 
   <!-- Daftar Tugas -->
