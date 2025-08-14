@@ -4,6 +4,11 @@
   <meta charset="UTF-8">
   <title>Login Admin</title>
   <link rel="icon" href="ikon.png" type="image/png">
+  <script>
+    if (sessionStorage.getItem("isLoggedIn") !== "true") {
+      window.location.href = "index.html";
+    }
+  </script>
   <style>
     :root {
       --background-main: #0e0e10;

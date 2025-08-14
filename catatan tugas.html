@@ -13,7 +13,6 @@
     }
   </script>
 
-
   <style>
     body {
       margin: 0;
@@ -24,9 +23,9 @@
     }
 
     .task-list {
-      max-height: 300px; /* Atur sesuai kebutuhan */
+      max-height: 300px;
       overflow-y: auto;
-      padding-right: 10px; /* opsional, agar tidak menabrak scrollbar */
+      padding-right: 10px;
     }
 
     .back-button {
@@ -128,7 +127,8 @@
   <!-- Form Tambah Tugas -->
   <form id="task-form">
     <input type="text" id="tugas" placeholder="Judul / Isi Tugas" required />
-    <input type="date" id="tanggal" required />
+    <input type="date" id="tanggal_awal" required />
+    <input type="date" id="tanggal_akhir" required />
     <button type="submit">Tambah</button>
   </form>
 
@@ -160,14 +160,17 @@
       const data = await res.json();
       taskList.innerHTML = "";
 
-      data.sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal));
+      data.sort((a, b) => new Date(b.tanggal_awal) - new Date(a.tanggal_awal));
 
       data.forEach(task => {
         const card = document.createElement("div");
         card.className = "task-card";
         card.innerHTML = `
           <div class="task-title">${task.tugas}</div>
-          <div class="task-date">Tanggal: ${task.tanggal} (${getNamaHari(task.tanggal)})</div>
+          <div class="task-date">
+            Tanggal: ${task.tanggal_awal} (${getNamaHari(task.tanggal_awal)}) 
+            - ${task.tanggal_akhir} (${getNamaHari(task.tanggal_akhir)})
+          </div>
         `;
         taskList.appendChild(card);
       });
@@ -177,9 +180,10 @@
       e.preventDefault();
 
       const tugas = document.getElementById("tugas").value.trim();
-      const tanggal = document.getElementById("tanggal").value;
+      const tanggal_awal = document.getElementById("tanggal_awal").value;
+      const tanggal_akhir = document.getElementById("tanggal_akhir").value;
 
-      if (!tugas || !tanggal) return;
+      if (!tugas || !tanggal_awal || !tanggal_akhir) return;
 
       await fetch(`${SUPABASE_URL}/rest/v1/tugas`, {
         method: "POST",
@@ -189,7 +193,7 @@
           "Content-Type": "application/json",
           Prefer: "return=representation"
         },
-        body: JSON.stringify({ tugas, tanggal })
+        body: JSON.stringify({ tugas, tanggal_awal, tanggal_akhir })
       });
 
       taskForm.reset();

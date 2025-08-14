@@ -151,24 +151,44 @@
     }
 
     async function loadTugasHariIni() {
-      const today = new Date().toISOString().split('T')[0];
-      const list = document.getElementById("tugas-hari-ini-list");
-      const res = await fetch("https://jopxmcqrvjrchecmhwtp.supabase.co/rest/v1/tugas?select=no,tugas,tanggal&tanggal=eq." + today, {
+  const today = new Date().toISOString().split('T')[0];
+  const list = document.getElementById("tugas-hari-ini-list");
+  try {
+    const res = await fetch(
+      `https://jopxmcqrvjrchecmhwtp.supabase.co/rest/v1/tugas?select=no,tugas,tanggal_awal,tanggal_akhir&tanggal_awal=lte.${today}&tanggal_akhir=gte.${today}`,
+      {
         headers: {
           apikey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpvcHhtY3FydmpyY2hlY21od3RwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI2Njk0NDcsImV4cCI6MjA2ODI0NTQ0N30.UPqgXPxwTz0wA4UUptUQSq0sint25MdbLu9U8bHdmL0",
           Authorization: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpvcHhtY3FydmpyY2hlY21od3RwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI2Njk0NDcsImV4cCI6MjA2ODI0NTQ0N30.UPqgXPxwTz0wA4UUptUQSq0sint25MdbLu9U8bHdmL0"
         }
-      });
-      const data = await res.json();
-      list.innerHTML = data.length
-        ? data.map(task => `
-            <div class='item'>
-              <span>${task.tugas} <small>(${getNamaHari(task.tanggal)}, ${task.tanggal})</small></span>
-              <button class="btn-selesai" onclick="hapusTugas(${task.no})">Selesai</button>
-            </div>
-          `).join('')
-        : "<p>Tidak ada tugas untuk hari ini.</p>";
-    }
+      }
+    );
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    list.innerHTML = data.length
+      ? data.map(task => `
+          <div class='item' style="
+            display: flex; 
+            align-items: center; 
+            gap: 10px;">
+            
+            <span style="flex: 1;">${task.tugas}</span>
+            
+            <small style="
+              text-align: right; 
+              margin-right: 95px;">
+              ${getNamaHari(task.tanggal_awal)}, ${task.tanggal_awal}s/d
+              ${getNamaHari(task.tanggal_akhir)}, ${task.tanggal_akhir}
+            </small>
+
+            <button class="btn-selesai" onclick="hapusTugas(${task.no})">Selesai</button>
+          </div>
+        `).join('')
+      : "<p>Tidak ada tugas untuk hari ini.</p>";
+  } catch {
+    list.innerHTML = "<p>Gagal memuat tugas.</p>";
+  }
+}
 
     async function hapusTugas(no) {
       await fetch(`https://jopxmcqrvjrchecmhwtp.supabase.co/rest/v1/tugas?no=eq.${no}`, {
@@ -183,40 +203,50 @@
 
     async function loadMotivasiHariIni() {
       const list = document.getElementById("motivasi-hari-ini-list");
-      const res = await fetch("https://jopxmcqrvjrchecmhwtp.supabase.co/rest/v1/catatan_motivasi?select=isi", {
-        headers: {
-          apikey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpvcHhtY3FydmpyY2hlY21od3RwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI2Njk0NDcsImV4cCI6MjA2ODI0NTQ0N30.UPqgXPxwTz0wA4UUptUQSq0sint25MdbLu9U8bHdmL0",
-          Authorization: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpvcHhtY3FydmpyY2hlY21od3RwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI2Njk0NDcsImV4cCI6MjA2ODI0NTQ0N30.UPqgXPxwTz0wA4UUptUQSq0sint25MdbLu9U8bHdmL0"
+      try {
+        const res = await fetch("https://jopxmcqrvjrchecmhwtp.supabase.co/rest/v1/catatan_motivasi?select=isi", {
+          headers: {
+            apikey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpvcHhtY3FydmpyY2hlY21od3RwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI2Njk0NDcsImV4cCI6MjA2ODI0NTQ0N30.UPqgXPxwTz0wA4UUptUQSq0sint25MdbLu9U8bHdmL0",
+            Authorization: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpvcHhtY3FydmpyY2hlY21od3RwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI2Njk0NDcsImV4cCI6MjA2ODI0NTQ0N30.UPqgXPxwTz0wA4UUptUQSq0sint25MdbLu9U8bHdmL0"
+          }
+        });
+        if (!res.ok) throw new Error();
+        const data = await res.json();
+        if (!data.length) {
+          list.innerHTML = "<p>Tidak ada motivasi tersedia.</p>";
+          return;
         }
-      });
-      const data = await res.json();
-      if (data.length === 0) {
-        list.innerHTML = "<p>Tidak ada motivasi tersedia.</p>";
-        return;
+        const random = data[Math.floor(Math.random() * data.length)];
+        list.innerHTML = `<div class='item'>“${random.isi}”</div>`;
+      } catch {
+        list.innerHTML = "<p>Gagal memuat motivasi.</p>";
       }
-      const random = data[Math.floor(Math.random() * data.length)];
-      list.innerHTML = `<div class='item'>“${random.isi}”</div>`;
     }
 
     async function loadPesanTerbaru() {
-      const res = await fetch("https://hnsvxbohvjjfikmdjfpn.supabase.co/rest/v1/messages?select=sender,text,created_at&order=created_at.desc&limit=1", {
-        headers: {
-          apikey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhuc3Z4Ym9odmpqZmlrbWRqZnBuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI0Nzk0NDMsImV4cCI6MjA2ODA1NTQ0M30.KzOeS0md4A6jeexgXxSdfuXuBbG5L1WtFginkztaPFw",
-          Authorization: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhuc3Z4Ym9odmpqZmlrbWRqZnBuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI0Nzk0NDMsImV4cCI6MjA2ODA1NTQ0M30.KzOeS0md4A6jeexgXxSdfuXuBbG5L1WtFginkztaPFw"
-        }
-      });
-      const data = await res.json();
       const box = document.getElementById("pesan-terbaru");
-      if (data.length) {
-        const msg = data[0];
-        box.innerHTML = `
-          <div class='message-item'>
-            <span><strong>${msg.sender}:</strong> ${msg.text}</span>
-            <a href="chat.html" class="btn-selesai">Balas Pesan</a>
-          </div>
-        `;
-      } else {
-        box.innerHTML = "Belum ada pesan.";
+      try {
+        const res = await fetch("https://hnsvxbohvjjfikmdjfpn.supabase.co/rest/v1/messages?select=sender,text,created_at&order=created_at.desc&limit=1", {
+          headers: {
+            apikey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhuc3Z4Ym9odmpqZmlrbWRqZnBuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI0Nzk0NDMsImV4cCI6MjA2ODA1NTQ0M30.KzOeS0md4A6jeexgXxSdfuXuBbG5L1WtFginkztaPFw",
+            Authorization: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhuc3Z4Ym9odmpqZmlrbWRqZnBuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI0Nzk0NDMsImV4cCI6MjA2ODA1NTQ0M30.KzOeS0md4A6jeexgXxSdfuXuBbG5L1WtFginkztaPFw"
+          }
+        });
+        if (!res.ok) throw new Error();
+        const data = await res.json();
+        if (data.length) {
+          const msg = data[0];
+          box.innerHTML = `
+            <div class='message-item'>
+              <span><strong>${msg.sender}:</strong> ${msg.text}</span>
+              <a href="chat.html" class="btn-selesai">Balas Pesan</a>
+            </div>
+          `;
+        } else {
+          box.innerHTML = "Belum ada pesan.";
+        }
+      } catch {
+        box.innerHTML = "<p>Gagal memuat pesan.</p>";
       }
     }
 
