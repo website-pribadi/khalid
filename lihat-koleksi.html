@@ -16,6 +16,23 @@
       color: white;
     }
 
+    .back-button {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background-color: #ff0055;
+      color: white;
+      padding: 12px 20px;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: bold;
+      transition: background-color 0.3s ease;
+    }
+
+    .back-button:hover {
+      background-color: #e6004c;
+    }
+
     h1 {
       text-align: center;
       color: #ff0055;
@@ -82,6 +99,9 @@
   </style>
 </head>
 <body>
+
+  <a href="index1.html" class="back-button">← Kembali</a>
+
   <h1>📚 Hasil Pencarian Buku</h1>
 
   <div class="card-container" id="tabel-koleksi">
